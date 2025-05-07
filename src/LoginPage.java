@@ -1,6 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
-    
+
 // Login Page Class
 // Handles user login and redirects to the MainMenu or SignupPage.
 public class LoginPage extends JFrame {
@@ -21,14 +21,24 @@ public class LoginPage extends JFrame {
         setLayout(new BorderLayout());
 
         // Header
-        headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(30, 144, 255)); // Dodger Blue
+        headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                Color color1 = new Color(30, 144, 255);
+                Color color2 = new Color(0, 102, 204);
+                GradientPaint gp = new GradientPaint(0, 0, color1, getWidth(), getHeight(), color2);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
         headerPanel.setPreferredSize(new Dimension(800, 120));
         headerPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 35));
         add(headerPanel, BorderLayout.NORTH);
 
         titleLabel = new JLabel("Login to SuGO Hotel Booking");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel);
 
@@ -59,15 +69,12 @@ public class LoginPage extends JFrame {
         gbc.gridy++;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
-        loginButton = new JButton("Login");
-        loginButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        loginButton = createStyledButton("Login", new Color(34, 139, 34)); // Green
         formPanel.add(loginButton, gbc);
 
         gbc.gridy++;
-        signupButton = new JButton("Don't have an account? Sign Up");
-        signupButton.setFont(new Font("Arial", Font.PLAIN, 16));
-        signupButton.setForeground(new Color(30, 144, 255));
-        signupButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        signupButton = createStyledButton("Don't have an account? Sign Up", new Color(30, 144, 255)); // Blue
+        signupButton.setForeground(Color.BLUE);
         signupButton.setBorderPainted(false);
         signupButton.setContentAreaFilled(false);
         formPanel.add(signupButton, gbc);
@@ -86,13 +93,26 @@ public class LoginPage extends JFrame {
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid credentials.\nHint: Username: sugoUser, Password: SugoPass123", "Login Failed", JOptionPane.ERROR_MESSAGE);
             }
-        }); 
+        });
 
         signupButton.addActionListener(e -> {
-            SignupPage signup = new SignupPage(); // Reference to SignupPage (assuming it's implemented)
+            SignupPage signup = new SignupPage(); // Reference to SignupPage
             signup.setVisible(true);
             dispose();
         });
+
+        setVisible(true);
+    }
+
+    private JButton createStyledButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 18));
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        return button;
     }
 
     public static void main(String[] args) {
