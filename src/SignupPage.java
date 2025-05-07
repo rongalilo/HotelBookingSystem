@@ -18,14 +18,24 @@ public class SignupPage extends JFrame {
         setLayout(new BorderLayout());
 
         // Header
-        headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(30, 144, 255));
+        headerPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                Color color1 = new Color(30, 144, 255);
+                Color color2 = new Color(0, 102, 204);
+                GradientPaint gp = new GradientPaint(0, 0, color1, getWidth(), getHeight(), color2);
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
         headerPanel.setPreferredSize(new Dimension(800, 120));
         headerPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 35));
         add(headerPanel, BorderLayout.NORTH);
 
         titleLabel = new JLabel("Create a New SuGO Account");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel);
 
@@ -81,13 +91,11 @@ public class SignupPage extends JFrame {
         formPanel.add(termsCheckBox, gbc);
 
         gbc.gridy++;
-        signupButton = new JButton("Sign Up");
-        signupButton.setFont(new Font("Arial", Font.PLAIN, 20));
+        signupButton = createStyledButton("Sign Up", new Color(34, 139, 34)); // Green
         formPanel.add(signupButton, gbc);
 
         gbc.gridy++;
-        backButton = new JButton("Back to Login");
-        backButton.setFont(new Font("Arial", Font.PLAIN, 16));
+        backButton = createStyledButton("Back to Login", new Color(220, 20, 60)); // Red
         formPanel.add(backButton, gbc);
 
         // Signup button validation
@@ -142,18 +150,22 @@ public class SignupPage extends JFrame {
         });
     }
 
+    private JButton createStyledButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.BOLD, 18));
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        return button;
+    }
+
     private boolean isValidEmail(String email) {
         return Pattern.matches("^[A-Za-z0-9+_.-]+@(.+)$", email);
     }
 
     private boolean isValidPassword(String password) {
         return Pattern.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", password);
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            SignupPage signup = new SignupPage();
-            signup.setVisible(true);
-        });
     }
 }
