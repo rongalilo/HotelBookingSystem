@@ -7,20 +7,22 @@ import java.util.Date;
 public class PaymentPage extends JFrame {
     private BookingManager bookingManager;
     private String bookingDetails;
+    private double totalPrice; // Store the total price passed from BookingForm
 
     public PaymentPage(BookingManager manager, String bookingDetails) {
         this.bookingManager = manager;
         this.bookingDetails = bookingDetails;
+
+        // Extract and store the total price from the booking details
+        this.totalPrice = extractTotalPrice(bookingDetails);
 
         setTitle("Payment Options");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(new BorderLayout());
 
-        // Header
+        // Add header and payment options
         add(createHeaderPanel(), BorderLayout.NORTH);
-
-        // Payment Options
         add(createOptionsPanel(), BorderLayout.CENTER);
 
         setVisible(true);
@@ -43,12 +45,11 @@ public class PaymentPage extends JFrame {
         gbc.insets = new Insets(20, 20, 20, 20);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Payment buttons
+        // Add payment buttons
         JButton cashButton = createPaymentButton("Cash", e -> handleCashPayment());
         JButton debitButton = createPaymentButton("Debit Card", e -> handleCardPayment("Debit Card"));
         JButton creditButton = createPaymentButton("Credit Card", e -> handleCardPayment("Credit Card"));
 
-        // Add buttons to panel
         gbc.gridx = 0;
         gbc.gridy = 0;
         panel.add(cashButton, gbc);
@@ -60,35 +61,45 @@ public class PaymentPage extends JFrame {
         return panel;
     }
 
-    /**
-     * Creates a payment button with the specified text and action.
-     * @param text The button text.
-     * @param action The action listener for the button.
-     * @return A JButton object.
-     */
     private JButton createPaymentButton(String text, ActionListener action) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.PLAIN, 20));
-        button.addActionListener(action); // Add the provided action listener
+        button.setBackground(new Color(30, 144, 255)); // Dodger Blue
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.addActionListener(action);
+
+        // Add hover effect
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(0, 102, 204)); // Darker Blue
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(30, 144, 255)); // Dodger Blue
+            }
+        });
+
         return button;
     }
 
     private void handleCashPayment() {
-        double totalPrice = calculateTotalPrice();
         JOptionPane.showMessageDialog(this,
-                "Your cash payment of ₱" + totalPrice + " will be collected at check-in.\nThank you!",
+                "Your cash payment of ₱" + String.format("%.2f", totalPrice) + " will be collected at check-in.\nThank you!",
                 "Cash Payment",
                 JOptionPane.INFORMATION_MESSAGE);
-        redirectToMainMenu();
+        displayReceipt("Cash", null);
     }
 
     private void handleCardPayment(String method) {
-        double totalPrice = calculateTotalPrice();
         String cardNumber = JOptionPane.showInputDialog(this,
-                "Enter your " + method + " Number:\nTotal Price: ₱" + totalPrice,
+                "Enter your " + method + " Number:\nTotal Price: ₱" + String.format("%.2f", totalPrice),
                 method + " Payment",
                 JOptionPane.PLAIN_MESSAGE);
 
+        // Validate card number input
         if (cardNumber == null || cardNumber.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Payment canceled. Please provide a valid card number.",
@@ -102,58 +113,68 @@ public class PaymentPage extends JFrame {
                 "Payment Confirmation",
                 JOptionPane.INFORMATION_MESSAGE);
 
-        generateReceipt(method, cardNumber, totalPrice);
+        displayReceipt(method, cardNumber);
     }
 
-    private void generateReceipt(String paymentMethod, String cardNumber, double totalPrice) {
-        String receipt = createReceipt(paymentMethod, cardNumber, totalPrice);
+    private void displayReceipt(String paymentMethod, String cardNumber) {
+        // Generate receipt and save it to the booking history
+        String receipt = createReceipt(paymentMethod, cardNumber);
+        saveReceipt(receipt);
 
-        JTextArea receiptArea = new JTextArea(receipt);
-        receiptArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        receiptArea.setEditable(false);
+        // Display receipt in a scrollable text pane
+        JTextPane receiptPane = new JTextPane();
+        receiptPane.setContentType("text/html");
+        receiptPane.setText(receipt);
+        receiptPane.setEditable(false);
 
-        JScrollPane scrollPane = new JScrollPane(receiptArea);
+        JScrollPane scrollPane = new JScrollPane(receiptPane);
+        scrollPane.setPreferredSize(new Dimension(600, 500));
+
         JOptionPane.showMessageDialog(this, scrollPane, "Payment Receipt", JOptionPane.INFORMATION_MESSAGE);
 
         redirectToMainMenu();
     }
 
-    private String createReceipt(String paymentMethod, String cardNumber, double totalPrice) {
+    private void saveReceipt(String receipt) {
+        bookingManager.addBooking(receipt); // Save the receipt to booking history
+    }
+
+    private String createReceipt(String paymentMethod, String cardNumber) {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dateTime = formatter.format(new Date());
 
-        String maskedCard = maskCardNumber(cardNumber);
+        String maskedCard = cardNumber != null && cardNumber.length() >= 4
+                ? "**** **** **** " + cardNumber.substring(cardNumber.length() - 4)
+                : "N/A";
 
-        return "-------------------------------\n" +
-               "           SuGO Hotel          \n" +
-               "-------------------------------\n" +
-               "Booking Details:\n" + bookingDetails + "\n" +
-               "-------------------------------\n" +
-               "Total Price: ₱" + totalPrice + "\n" +
-               "Payment Method: " + paymentMethod + "\n" +
-               "Card Number: " + maskedCard + "\n" +
-               "Transaction Date: " + dateTime + "\n" +
-               "-------------------------------\n" +
-               "Thank you for booking with us!\n" +
-               "We look forward to hosting you.\n" +
-               "-------------------------------";
+        return "<html>" +
+               "<body style='font-family:Arial,sans-serif;'>" +
+               "<h1 style='text-align:center;color:#2E8B57;'>SuGO Hotel Receipt</h1>" +
+               "<hr>" +
+               "<p><b>Booking Details:</b><br>" + bookingDetails.replace(", ", "<br>") + "</p>" +
+               "<hr>" +
+               "<p><b>Total Price:</b> ₱" + String.format("%.2f", totalPrice) + "</p>" +
+               "<p><b>Payment Method:</b> " + paymentMethod + "</p>" +
+               "<p><b>Card Number:</b> " + maskedCard + "</p>" +
+               "<p><b>Transaction Date:</b> " + dateTime + "</p>" +
+               "<hr>" +
+               "<p style='text-align:center;'>Thank you for booking with SuGO Hotel!<br>We look forward to hosting you.</p>" +
+               "</body>" +
+               "</html>";
     }
 
-    private String maskCardNumber(String cardNumber) {
-        if (cardNumber.length() >= 4) {
-            return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
-        } else {
-            return "Invalid Card Number";
+    private double extractTotalPrice(String bookingDetails) {
+        try {
+            String[] details = bookingDetails.split(", ");
+            String totalPriceString = details[details.length - 1].split(": ")[1].replace("₱", "");
+            return Double.parseDouble(totalPriceString);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error extracting total price. Please check booking details.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return 0.0;
         }
-    }
-
-    private double calculateTotalPrice() {
-        String[] details = bookingDetails.split(", ");
-        String roomType = details[0].split(": ")[1];
-        int nights = Integer.parseInt(details[1].split(": ")[1]);
-
-        double pricePerNight = roomType.equals("Standard") ? 1000 : 2300;
-        return pricePerNight * nights;
     }
 
     private void redirectToMainMenu() {
