@@ -1,15 +1,14 @@
 // Deluxe Room Class
-// Implements room pricing for deluxe rooms with additional luxury surcharge.
+// Defines properties and pricing for Deluxe Room.
 public class DeluxeRoom extends Room {
-    private static final double BASE_RATE = 1800.0; // Base price per night
-    private static final double LUXURY_SURCHARGE = 500.0; // Extra surcharge per night
+    private static final double PRICE_PER_NIGHT = 2300; // Price per night for Deluxe Room
 
-    public DeluxeRoom(int capacity) {
-        super("Deluxe", capacity);
+    public DeluxeRoom() {
+        super("Deluxe Room", 4); // Deluxe Room with a capacity of 4 people
     }
 
     @Override
     public double calculatePrice(int nights) {
-        return (BASE_RATE + LUXURY_SURCHARGE) * nights; // Deluxe pricing calculation
+        return nights * PRICE_PER_NIGHT;
     }
 }
